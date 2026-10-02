@@ -1,0 +1,312 @@
+/* Poker Assistant Overlay Styles */
+#poker-assistant-overlay,
+#poker-assistant-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.92);
+  color: #ffffff;
+  padding: 15px 20px;
+  border-radius: 10px;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-size: 14px;
+  z-index: 999999;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border: 2px solid #4CAF50;
+  pointer-events: auto;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+#poker-assistant-overlay.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.pa-header {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #444;
+  color: #4CAF50;
+}
+
+.pa-recommendation {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.pa-details {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pa-details div {
+  margin: 3px 0;
+}
+
+.pa-street {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.pa-reasoning {
+  font-size: 11px;
+  color: #ccc;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px;
+  border-radius: 5px;
+  margin-top: 8px;
+  font-style: italic;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.pa-footer {
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #333;
+}
+
+.pa-header {
+  cursor: move;
+  user-select: none;
+}
+
+/* Manual Input Popup */
+#poker-manual-input {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000000;
+}
+
+.pmi-panel {
+  background: rgba(20, 20, 30, 0.97);
+  color: #fff;
+  padding: 0;
+  border-radius: 12px;
+  min-width: 400px;
+  max-width: 500px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8), 0 0 0 2px #4CAF50;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.pmi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  border-radius: 12px 12px 0 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.pmi-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pmi-close:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.pmi-body {
+  padding: 20px;
+}
+
+.pmi-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 10px;
+}
+
+.pmi-row label {
+  min-width: 120px;
+  font-size: 13px;
+  color: #aaa;
+}
+
+.pmi-row input {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+}
+
+.pmi-row input:focus {
+  border-color: #4CAF50;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.pmi-analyze {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #4CAF50, #66BB6A);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+
+.pmi-analyze:hover {
+  background: linear-gradient(135deg, #66BB6A, #81C784);
+  transform: translateY(-1px);
+}
+
+.pmi-analyze:active {
+  transform: translateY(0);
+}
+
+.pmi-status {
+  padding: 12px 20px;
+  font-size: 13px;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pmi-loading {
+  color: #FFA726;
+  background: rgba(255, 167, 38, 0.1);
+}
+
+.pmi-success {
+  color: #66BB6A;
+  background: rgba(102, 187, 106, 0.1);
+}
+
+.pmi-error {
+  color: #EF5350;
+  background: rgba(239, 83, 80, 0.1);
+}
+
+/* Alternative: floating button style */
+.poker-assistant-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #4CAF50;
+  color: white;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  z-index: 999998;
+  transition: transform 0.2s;
+}
+
+.poker-assistant-float:hover {
+  transform: scale(1.1);
+}
+
+/* ===== Poker Assistant v3.2 ===== */
+
+.pa-state {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.pa-state-title {
+  font-weight: bold;
+  color: #81c784;
+  margin-bottom: 4px;
+}
+
+.pa-state-row {
+  margin: 2px 0;
+  color: #ddd;
+}
+
+.pa-warning {
+  color: #ffb74d;
+  margin-top: 4px;
+}
+
+.pa-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.pa-badge-llm {
+  background: #1e88e5;
+  color: #fff;
+}
+
+.pa-badge-fallback {
+  background: #546e7a;
+  color: #fff;
+}
+
+.pa-version {
+  font-size: 10px;
+  color: #999;
+  font-weight: normal;
+  margin-left: 6px;
+}
+
+#poker-assistant-hud {
+  display: none !important;
+}
+
+.pa-rec-wait {
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: #ffcc80;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.pa-rec {
+  margin-top: 8px;
+}

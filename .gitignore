@@ -1,0 +1,9 @@
+secrets.js
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+hud_sim_test.png
+*.log
+.cursor/
+agent-transcripts/
