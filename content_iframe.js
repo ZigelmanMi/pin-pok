@@ -8,7 +8,7 @@
   if (!isGame) return;
 
   window.__pokerAssistantInitialized = true;
-  try { document.documentElement.setAttribute('data-pa-loaded', '3.3.14'); } catch (e) { /* ignore */ }
+  try { document.documentElement.setAttribute('data-pa-loaded', '3.3.15'); } catch (e) { /* ignore */ }
 
   window.addEventListener('message', function (e) {
     if (!e.data) return;

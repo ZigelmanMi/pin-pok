@@ -5,7 +5,7 @@
   if (window.__pokerAssistantMainInit) return;
   window.__pokerAssistantMainInit = true;
 
-  try { document.documentElement.setAttribute('data-pa-loaded', '3.3.14'); } catch (e) { /* ignore */ }
+  try { document.documentElement.setAttribute('data-pa-loaded', '3.3.15'); } catch (e) { /* ignore */ }
 
   var lastInject = 0;
   var lastShotAt = 0;

@@ -240,7 +240,56 @@
     return /back|facedown|face-down|hidden-card|card-back|рубашк/i.test(cls);
   }
 
-  class PokerCardParserCore {
+  function classText(el) {
+    if (!el) return '';
+    try {
+      if (typeof el.className === 'string') return el.className;
+      if (el.className && el.className.baseVal) return String(el.className.baseVal);
+      return el.getAttribute && (el.getAttribute('class') || '') || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function isJunkPlayerName(name) {
+    if (!name || name.length < 2 || name.length > 28) return true;
+    return /не\s*занято|свободно|пусто|empty|vacant|отош[её]л|sit\s*out|away|банк|pot|ставк|blinds?|колл|call|check|фолд|fold|lucky|hold.?em|dealer|дилер|итого/i.test(name);
+  }
+
+  function findSeatRoot(el) {
+    var n = el;
+    for (var i = 0; i < 10 && n && n !== document.body; i++) {
+      if (/r-seat|r-player|player-bar|player-box|player-info|seat-/i.test(classText(n))) return n;
+      n = n.parentElement;
+    }
+    return el.parentElement || el;
+  }
+
+  function seatStatus(root, name) {
+    if (isJunkPlayerName(name) || /не\s*занято|empty|vacant/i.test(name || '')) return 'empty';
+    var blob = name || '';
+    var node = root;
+    for (var i = 0; i < 5 && node && node !== document.body; i++) {
+      blob += ' ' + classText(node);
+      try { blob += ' ' + (node.getAttribute('data-status') || '') + ' ' + (node.getAttribute('data-state') || ''); } catch (e) { /* ignore */ }
+      node = node.parentElement;
+    }
+    try { blob += ' ' + String((root.innerText || '')).slice(0, 180); } catch (e2) { /* ignore */ }
+    if (/sit-?out|sitting.?out|отош[её]л|away|afk/i.test(blob)) return 'sitout';
+    if (/(?:^|[\s_-])(?:fold|folded|is-fold|isFolded)(?:$|[\s_-])/i.test(blob) || /фолд|\bпас\b/i.test(blob)) return 'folded';
+    try {
+      var st = getComputedStyle(root);
+      var op = parseFloat(st.opacity);
+      if (isFinite(op) && op > 0 && op < 0.78) return 'folded';
+      var vis = st.visibility;
+      if (vis === 'hidden') return 'empty';
+      if (/grayscale\(|brightness\(\s*0?\.[0-6]/i.test(st.filter || '')) return 'folded';
+    } catch (e3) { /* ignore */ }
+    var cards = [];
+    try { cards = root.querySelectorAll('.r-card, [class*="hole-card"], [class*="card-back"], [class*="close-card"]'); } catch (e4) { cards = []; }
+    if (cards && cards.length >= 2) return 'active';
+    return 'active';
+  }
     constructor(opts) {
       this.opts = opts || {};
     }
@@ -455,25 +504,41 @@
     }
 
     countPlayers() {
-      var count = 0;
-      var names = document.querySelectorAll('[class*="player-name"], .bar-text.top-line');
-      for (var i = 0; i < names.length; i++) {
-        var t = (names[i].textContent || '').trim();
-        if (t && t.length > 1 && !/не\s*занято|свободно|пусто|отошел/i.test(t)) count++;
+      var info = this.getPlayersInfo();
+      var active = 0;
+      var seated = 0;
+      for (var i = 0; i < info.length; i++) {
+        if (info[i].seated) seated++;
+        if (info[i].active) active++;
       }
-      if (count >= 2) return count;
-      var seats = document.querySelectorAll('.r-seat, [class*="r-seat"]');
-      return Math.max(2, Math.ceil(seats.length / 2));
+      if (active >= 1) return Math.max(2, Math.min(6, active));
+      if (seated >= 2) return Math.min(6, seated);
+      return 2;
+    }
+
+    countSeated() {
+      var n = 0;
+      var info = this.getPlayersInfo();
+      for (var i = 0; i < info.length; i++) {
+        if (info[i].seated) n++;
+      }
+      return n;
     }
 
     getPlayersInfo() {
       var players = [];
+      var seen = {};
       var nameEls = document.querySelectorAll('[class*="player-name"], .bar-text.top-line');
       for (var i = 0; i < nameEls.length; i++) {
         var nameEl = nameEls[i];
-        var name = (nameEl.textContent || '').trim();
-        if (!name || /не\s*занято|свободно|пусто/i.test(name)) continue;
-        var bar = nameEl.closest('[class*="player-bar"], .r-player, [class*="r-player"], .r-seat') || nameEl.parentElement;
+        var name = (nameEl.textContent || '').replace(/\s+/g, ' ').trim();
+        if (isJunkPlayerName(name)) continue;
+        var rect = nameEl.getBoundingClientRect();
+        if (!rect || rect.width < 4 || rect.height < 4) continue;
+        var key = name + '@' + Math.round(rect.left / 40) + ',' + Math.round(rect.top / 40);
+        if (seen[key]) continue;
+        seen[key] = true;
+        var bar = findSeatRoot(nameEl);
         var cashEl = bar ? bar.querySelector('[class*="player-cash"], .bar-text.bottom-line') : null;
         var cash = cashEl ? parseMoney(cashEl.textContent) : 0;
         if (!cash && bar) {
@@ -482,8 +547,20 @@
         }
         var betEl = bar ? bar.querySelector('[class*="player-bet"]') : null;
         var bet = betEl ? parseMoney(betEl.textContent) : 0;
-        var rect = nameEl.getBoundingClientRect();
-        players.push({ name: name, cash: cash, bet: bet, x: rect.left, y: rect.top });
+        var status = seatStatus(bar || nameEl, name);
+        var seated = status !== 'empty';
+        var active = status === 'active';
+        players.push({
+          name: name, cash: cash, bet: bet,
+          x: rect.left, y: rect.top,
+          status: status, seated: seated, active: active
+        });
+      }
+      if (players.length) {
+        players.sort(function (a, b) { return b.y - a.y; });
+        players[0].active = true;
+        players[0].seated = true;
+        if (players[0].status === 'empty' || players[0].status === 'folded') players[0].status = 'active';
       }
       return players;
     }
@@ -553,6 +630,7 @@
         pot: this.detectPot(),
         betToCall: this.detectBetToCall(),
         numPlayers: this.countPlayers(),
+        numSeated: this.countSeated(),
         stage: stage,
         bigBlind: this.detectBigBlind(),
         heroStack: stacks.heroStack,
@@ -604,7 +682,9 @@
         '<div class="pa-state-row">💰 Банк: <b>' + (state.pot != null ? '$' + Number(state.pot).toFixed(2) : '—') +
         '</b> · Ставка: <b>' + (state.betToCall != null ? '$' + Number(state.betToCall).toFixed(2) : '—') + '</b></div>' +
         '<div class="pa-state-row">👛 Стек' + nameTxt + ': <b>' + stackTxt + '</b></div>' +
-        '<div class="pa-state-row">👥 Игроков: <b>' + (state.numPlayers || '—') + '</b> · Улица: <b>' + street + '</b></div>' +
+      '<div class="pa-state-row">👥 В игре: <b>' + (state.numPlayers || '—') +
+      '</b>' + (state.numSeated && state.numSeated !== state.numPlayers ? ' · за столом: ' + state.numSeated : '') +
+      ' · Улица: <b>' + street + '</b></div>' +
         (response.readingWarning ? '<div class="pa-warning">⚠️ ' + response.readingWarning + '</div>' : '') +
       '</div>';
 
@@ -613,7 +693,7 @@
       : '<span class="pa-badge pa-badge-llm">🤖 GigaChat</span>';
 
     return '' +
-      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.14</span></div>' +
+      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.15</span></div>' +
       stateBlock +
       '<div class="pa-street">Улица: ' + street + ' ' + sourceBadge + '</div>' +
       '<div class="pa-recommendation" style="color: ' + color + ';">' + decision.action + '</div>' +
@@ -664,7 +744,7 @@
     panel = doc.createElement('div');
     panel.id = 'poker-assistant-panel';
     panel.innerHTML =
-      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.14</span></div>' +
+      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.15</span></div>' +
       '<div id="pa-live" class="pa-state"><div class="pa-state-title">📡 Читаю стол…</div></div>' +
       '<div id="pa-rec" class="pa-rec-wait">Рекомендация появится, когда будут карты</div>';
     doc.body.appendChild(panel);
@@ -688,8 +768,9 @@
       '<div class="pa-state-row">💰 Банк: <b>$' + Number(state.pot || 0).toFixed(2) +
       '</b> · Ставка: <b>$' + Number(state.betToCall || 0).toFixed(2) + '</b></div>' +
       '<div class="pa-state-row">👛 Стек' + nameTxt + ': <b>' + stackTxt + '</b></div>' +
-      '<div class="pa-state-row">👥 Игроков: <b>' + (state.numPlayers || '—') +
-      '</b> · Улица: <b>' + (state.stage || extra.street || '?') + '</b>' +
+      '<div class="pa-state-row">👥 В игре: <b>' + (state.numPlayers || '—') +
+      '</b>' + (state.numSeated && state.numSeated !== state.numPlayers ? ' · за столом: ' + state.numSeated : '') +
+      ' · Улица: <b>' + (state.stage || extra.street || '?') + '</b>' +
       (state._raw && state._raw.source ? ' · src: ' + state._raw.source : '') +
       (state._raw && state._raw.shotBoxes != null ? ' · boxes: ' + state._raw.shotBoxes : '') +
       (state._raw && state._raw.shotReads != null ? ' · reads: ' + state._raw.shotReads : '') +
@@ -761,5 +842,5 @@
     ensurePanel: ensurePanel,
     showDead: showDead
   };
-  console.log('[PokerAssistant] Shared parser v3.3.14 loaded');
+  console.log('[PokerAssistant] Shared parser v3.3.15 loaded');
 })();

@@ -40,8 +40,9 @@
       '<div class="pa-state-row">💰 Банк: <b>$' + Number(state.pot || 0).toFixed(2) +
       '</b> · Ставка: <b>$' + Number(state.betToCall || 0).toFixed(2) + '</b></div>' +
       '<div class="pa-state-row">👛 Стек' + nameTxt + ': <b>' + stackTxt + '</b></div>' +
-      '<div class="pa-state-row">👥 Игроков: <b>' + (state.numPlayers || '—') +
-      '</b> · Улица: <b>' + (state.stage || extra.street || '?') + '</b>' +
+      '<div class="pa-state-row">👥 В игре: <b>' + (state.numPlayers || '—') +
+      '</b>' + (state.numSeated && state.numSeated !== state.numPlayers ? ' · за столом: ' + state.numSeated : '') +
+      ' · Улица: <b>' + (state.stage || extra.street || '?') + '</b>' +
       (state._raw && state._raw.source ? ' · src: ' + state._raw.source : '') +
       (state._raw && state._raw.shotBoxes != null ? ' · boxes: ' + state._raw.shotBoxes : '') +
       (state._raw && state._raw.shotReads != null ? ' · reads: ' + state._raw.shotReads : '') +

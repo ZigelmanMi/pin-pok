@@ -49,12 +49,12 @@ class GigaChatAdapter {
       // Token typically valid for 60 minutes, refresh 5 min early
       this.tokenExpiry = now + (data.expires_in * 1000) - 60000;
       return this.accessToken;
-    } catch (error) {
-      console.error('GigaChat auth error:', error);
-      this.accessToken = null;
-      this.tokenExpiry = 0;
-      throw error;
-    }
+  } catch (error) {
+    console.error('GigaChat auth error:', error);
+    this.accessToken = null;
+    this.tokenExpiry = 0;
+    throw error;
+  }
   }
 
   generateRqUID() {
@@ -145,9 +145,7 @@ class GigaChatAdapter {
           conversation.pop();
         }
         const msg = String((error && error.message) || error);
-        // Network / SSL / offline — do not burn 30s on retries, use GTO fallback
         if (/failed to fetch|networkerror|err_cert|err_connection|err_name_not_resolved/i.test(msg)) {
-          console.error(`GigaChat network error for hand#${handId}:`, msg);
           throw error;
         }
         if (attempt === maxRetries - 1) {

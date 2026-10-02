@@ -15,6 +15,7 @@ const gigachat = new GigaChatAdapter(GIGACHAT_API_KEY);
 gigachat.model = 'GigaChat';
 gigachat.maxTokens = 1024;
 gigachat.temperature = 0.3;
+let gigachatDown = false;
 
 // Hand counter for unique hand IDs
 let handCounter = 0;
@@ -394,6 +395,7 @@ function responseState(handState) {
     pot: handState.pot,
     betToCall: handState.betToCall,
     numPlayers: handState.numPlayers,
+    numSeated: handState.numSeated,
     heroStack: handState.heroStack,
     heroName: handState.heroName,
     bigBlind: handState.bigBlind
@@ -513,7 +515,7 @@ async function analyzeHandWithPokerSkill(handState) {
 
   const { equity, source, hand } = computeEquity(handState);
 
-  if (!GIGACHAT_API_KEY) {
+  if (!GIGACHAT_API_KEY || gigachatDown) {
     const decision = buildFallbackDecision(handState);
     return {
       hand_id: ++handCounter,
@@ -575,8 +577,22 @@ async function analyzeHandWithPokerSkill(handState) {
       prompt.user_prompt
     );
   } catch (error) {
-    console.error('[PokerSkill] GigaChat call failed:', error);
-    throw error;
+    const msg = String((error && error.message) || error);
+    if (/failed to fetch|networkerror|err_cert|err_connection|err_name_not_resolved/i.test(msg)) {
+      gigachatDown = true;
+    }
+    const fb = buildFallbackDecision(handState);
+    return {
+      hand_id: gameState.hand_id,
+      street,
+      decision: fb,
+      potOdds: potOdds.toFixed(1),
+      equity: equity.toFixed(1),
+      equity_source: source,
+      hand: hand || '',
+      state: responseState(handState),
+      readingWarning: cardsWarning(handState)
+    };
   }
 
   // Parse LLM response

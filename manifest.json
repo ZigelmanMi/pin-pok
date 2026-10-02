@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Poker Assistant — PokerSkill + GigaChat",
-  "version": "3.3.14",
+  "version": "3.3.15",
   "description": "Real-time poker hand analysis with PokerSkill 5-layer system powered by GigaChat LLM",
   "permissions": [
     "activeTab",
