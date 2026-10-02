@@ -66,6 +66,81 @@ function broadcastCards(tabId, cards) {
   broadcastToTab(tabId, { action: 'shotCards', data: cards });
 }
 
+let hudWindowId = null;
+let hudDismissed = false;
+let lastHud = { state: null, extra: {}, response: null, dead: false };
+
+function findHudWindow() {
+  return chrome.windows.getAll({ populate: true, windowTypes: ['popup'] }).then((wins) => {
+    for (const w of wins || []) {
+      const tab = (w.tabs || [])[0];
+      if (tab && tab.url && tab.url.indexOf('hud.html') !== -1) return w.id;
+    }
+    return null;
+  }).catch(() => null);
+}
+
+function fanoutHud() {
+  chrome.runtime.sendMessage({ action: 'hudRender', hud: lastHud }, function () {
+    void chrome.runtime.lastError;
+  });
+}
+
+function applyHud(partial) {
+  if (!partial) return;
+  if (partial.state) lastHud.state = partial.state;
+  if (partial.extra) lastHud.extra = partial.extra;
+  if (partial.response !== undefined) lastHud.response = partial.response;
+  if (partial.dead) lastHud.dead = true;
+  else if (partial.state) lastHud.dead = false;
+  fanoutHud();
+}
+
+async function openHudWindow(focus) {
+  if (hudDismissed && !focus) return;
+  if (focus) hudDismissed = false;
+  const existing = hudWindowId || await findHudWindow();
+  if (existing) {
+    hudWindowId = existing;
+    if (focus) {
+      try { await chrome.windows.update(existing, { focused: true }); } catch (e) { /* ignore */ }
+    }
+    fanoutHud();
+    return;
+  }
+  let left = 40;
+  let top = 80;
+  try {
+    const win = await chrome.windows.getLastFocused();
+    if (win) {
+      left = (win.left || 0) + (win.width || 0) + 12;
+      top = (win.top || 0) + 48;
+      if (left > 1500) left = Math.max(8, (win.left || 0) - 372);
+    }
+  } catch (e) { /* ignore */ }
+  try {
+    const created = await chrome.windows.create({
+      url: chrome.runtime.getURL('hud.html'),
+      type: 'popup',
+      focused: !!focus,
+      width: 360,
+      height: 580,
+      left: left,
+      top: top
+    });
+    hudWindowId = created && created.id;
+  } catch (e) {
+    console.warn('[PokerAssistant] hud window:', (e && e.message) || e);
+  }
+}
+
+chrome.windows.onRemoved.addListener((id) => {
+  if (id === hudWindowId) {
+    hudWindowId = null;
+    hudDismissed = true;
+  }
+});
+
 function pyCardsUseful(cards) {
   if (!cards) return false;
   return (cards.myCards && cards.myCards.length >= 2) ||
@@ -110,6 +185,7 @@ function scheduleInjection(tabId) {
       if (n) {
         console.log(`[PokerAssistant] Injected into ${n} game frame(s) of tab ${tabId}`);
         setBadge(tabId, 'ON', '#4caf50');
+        openHudWindow(false);
       }
     }).catch((err) => {
       console.error(`[PokerAssistant] Injection failed for tab ${tabId}:`, (err && err.message) || err);
@@ -141,6 +217,7 @@ if (typeof chrome.action !== 'undefined' && chrome.action && chrome.action.onCli
     console.log(`[PokerAssistant] Extension icon clicked on: ${tab && tab.url}`);
     if (tab && tab.id) {
       scheduleInjection(tab.id);
+      openHudWindow(true);
     }
   });
 } else {
@@ -154,6 +231,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'injectIntoIframes' && sender.tab) {
     console.log('[PokerAssistant] Received inject request from content script');
     injectIntoMatchingFrames(sender.tab.id).then(() => {
+      openHudWindow(false);
       sendResponse({ injected: true });
     }).catch((err) => {
       console.error('[PokerAssistant] Frame injection failed:', err);
@@ -205,21 +283,46 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === 'hudHello') {
+    sendResponse(lastHud);
+    return true;
+  }
+
+  if (request.action === 'hudFocus') {
+    openHudWindow(true);
+    sendResponse({ ok: true });
+    return true;
+  }
+
+  if (request.action === 'hudUpdate') {
+    applyHud(request.data || {});
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (request.action === 'analyzeHand') {
     const handState = request.hand || {};
     analyzeHandWithPokerSkill(handState).then((result) => {
+      applyHud({
+        state: (result && result.state) || responseState(handState),
+        extra: { street: result && result.street, warning: result && result.readingWarning },
+        response: result
+      });
+      openHudWindow(false);
       sendResponse(result);
     }).catch((error) => {
       console.error('Analysis error:', error);
       const street = detectStreet(handState);
       const decision = buildFallbackDecision(handState);
-      sendResponse({
+      const result = {
         error: (error && error.message) || 'Failed to analyze hand',
         street,
         decision,
         state: responseState(handState),
         readingWarning: cardsWarning(handState)
-      });
+      };
+      applyHud({ state: result.state, extra: { street, warning: result.error }, response: result });
+      sendResponse(result);
     });
 
     return true;
@@ -256,17 +359,9 @@ async function injectIntoMatchingFrames(tabId) {
   } catch (e) {
     console.warn('[PokerAssistant] page_bridge:', (e && e.message) || e);
   }
-  try {
-    await chrome.scripting.insertCSS({
-      target: target,
-      files: ['overlay.css']
-    });
-  } catch (e) {
-    console.warn('[PokerAssistant] insertCSS:', (e && e.message) || e);
-  }
   const results = await chrome.scripting.executeScript({
     target: target,
-    files: ['vision.js', 'card_parser.js', 'content_iframe.js', 'manual_input.js']
+    files: ['vision.js', 'card_parser.js', 'content_iframe.js']
   });
   const ok = (results || []).filter(r => !r.error).length;
   return ok;

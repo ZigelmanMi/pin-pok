@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Poker Assistant</title>
+  <link rel="stylesheet" href="overlay.css">
+  <style>
+    html, body {
+      margin: 0;
+      background: #0d0d0d;
+      color: #fff;
+      min-width: 320px;
+      min-height: 100%;
+    }
+    #poker-assistant-panel {
+      position: static;
+      top: auto;
+      right: auto;
+      width: auto;
+      max-width: none;
+      min-width: 0;
+      border-radius: 0;
+      box-shadow: none;
+      border: none;
+      border-bottom: 1px solid #2e7d32;
+    }
+    .pa-header { cursor: default; }
+    .pa-hint {
+      font-size: 11px;
+      color: #888;
+      margin: 8px 0 0;
+      line-height: 1.4;
+    }
+    .pa-manual {
+      padding: 12px 20px 16px;
+      border-top: 1px solid #333;
+    }
+    .pa-manual label {
+      display: block;
+      font-size: 12px;
+      color: #aaa;
+      margin: 8px 0 4px;
+    }
+    .pa-manual input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+    .pa-manual button {
+      margin-top: 10px;
+      width: 100%;
+      background: #2e7d32;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .pa-manual button:hover { background: #388e3c; }
+    #pa-man-status { font-size: 12px; color: #aaa; margin-top: 6px; min-height: 16px; }
+  </style>
+</head>
+<body>
+  <div id="poker-assistant-panel">
+    <div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.14</span></div>
+    <div id="pa-live" class="pa-state">
+      <div class="pa-state-title">📡 Жду стол…</div>
+      <div class="pa-hint">Отдельное окно — перетащите его в сторону от Pinco или на второй монитор. Стол не перекрывается.</div>
+    </div>
+    <div id="pa-rec" class="pa-rec-wait">Рекомендация появится, когда будут карты</div>
+  </div>
+  <div class="pa-manual">
+    <div class="pa-state-title">⌨️ Если зрение ошиблось</div>
+    <label>Мои карты <input id="pa-man-hole" placeholder="Ah Kd"></label>
+    <label>Доска <input id="pa-man-board" placeholder="5s Td Jd"></label>
+    <button id="pa-man-go" type="button">Посчитать</button>
+    <div id="pa-man-status"></div>
+  </div>
+  <script src="hud.js"></script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Poker Assistant — PokerSkill + GigaChat",
-  "version": "3.3.13",
+  "version": "3.3.14",
   "description": "Real-time poker hand analysis with PokerSkill 5-layer system powered by GigaChat LLM",
   "permissions": [
     "activeTab",
@@ -23,7 +23,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "Poker Assistant — нажмите для включения"
+    "default_title": "Poker Assistant — открыть виджет"
   },
   "content_scripts": [
     {
@@ -45,8 +45,7 @@
         "*://pu-web2.e5t.online/*",
         "*://*.e5t.online/*"
       ],
-      "js": ["vision.js", "card_parser.js", "content_iframe.js", "manual_input.js"],
-      "css": ["overlay.css"],
+      "js": ["vision.js", "card_parser.js", "content_iframe.js"],
       "run_at": "document_idle",
       "all_frames": true
     }

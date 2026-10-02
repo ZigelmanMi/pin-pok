@@ -613,7 +613,7 @@
       : '<span class="pa-badge pa-badge-llm">🤖 GigaChat</span>';
 
     return '' +
-      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.13</span></div>' +
+      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.14</span></div>' +
       stateBlock +
       '<div class="pa-street">Улица: ' + street + ' ' + sourceBadge + '</div>' +
       '<div class="pa-recommendation" style="color: ' + color + ';">' + decision.action + '</div>' +
@@ -664,7 +664,7 @@
     panel = doc.createElement('div');
     panel.id = 'poker-assistant-panel';
     panel.innerHTML =
-      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.13</span></div>' +
+      '<div class="pa-header">🃏 Poker Assistant <span class="pa-version">v3.3.14</span></div>' +
       '<div id="pa-live" class="pa-state"><div class="pa-state-title">📡 Читаю стол…</div></div>' +
       '<div id="pa-rec" class="pa-rec-wait">Рекомендация появится, когда будут карты</div>';
     doc.body.appendChild(panel);
@@ -761,5 +761,5 @@
     ensurePanel: ensurePanel,
     showDead: showDead
   };
-  console.log('[PokerAssistant] Shared parser v3.3.13 loaded');
+  console.log('[PokerAssistant] Shared parser v3.3.14 loaded');
 })();

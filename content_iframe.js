@@ -8,7 +8,7 @@
   if (!isGame) return;
 
   window.__pokerAssistantInitialized = true;
-  try { document.documentElement.setAttribute('data-pa-loaded', '3.3.13'); } catch (e) { /* ignore */ }
+  try { document.documentElement.setAttribute('data-pa-loaded', '3.3.14'); } catch (e) { /* ignore */ }
 
   window.addEventListener('message', function (e) {
     if (!e.data) return;
@@ -87,7 +87,12 @@
   }
 
   PokerAssistantIframe.prototype.init = function () {
-    if (window.PokerAssistantUI) window.PokerAssistantUI.ensurePanel(document);
+    try {
+      var old = document.getElementById('poker-assistant-panel');
+      if (old) old.remove();
+      var ov = document.getElementById('poker-assistant-overlay');
+      if (ov) ov.remove();
+    } catch (e) { /* ignore */ }
     this.initializeObserver();
     this.startAutoDetection();
   };
@@ -100,7 +105,7 @@
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
-    if (window.PokerAssistantUI) window.PokerAssistantUI.showDead(document);
+    try { chrome.runtime.sendMessage({ action: 'hudUpdate', data: { dead: true } }); } catch (e) { /* ignore */ }
   };
 
   PokerAssistantIframe.prototype.initializeObserver = function () {
@@ -152,7 +157,9 @@
       });
     }
 
-    if (window.PokerAssistantUI) window.PokerAssistantUI.updateLive(state, {}, document);
+    try {
+      chrome.runtime.sendMessage({ action: 'hudUpdate', data: { state: state } });
+    } catch (e) { /* ignore */ }
 
     var haveCards = state && state.myCards && state.myCards.length >= 2;
     var stale = !this.lastDecision || (now - this.lastAnalysisTime > 12000);
@@ -200,7 +207,9 @@
             heroStack: state.heroStack,
             heroName: state.heroName
           };
-          if (window.PokerAssistantUI) window.PokerAssistantUI.showOverlay(response, document);
+          try {
+            chrome.runtime.sendMessage({ action: 'hudUpdate', data: { state: response.state, response: response } });
+          } catch (e) { /* ignore */ }
         }
       });
     } catch (e) {
@@ -215,9 +224,13 @@
     (document.head || document.documentElement).appendChild(s);
   } catch (e) { /* ignore */ }
 
-  window._pokerAssistantIframe = new PokerAssistantIframe();
-
-  document.addEventListener('pokerAnalysisResult', function (e) {
-    if (window.PokerAssistantUI) window.PokerAssistantUI.showOverlay(e.detail, document);
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    e.preventDefault();
+    try { chrome.runtime.sendMessage({ action: 'hudFocus' }); } catch (err) { /* ignore */ }
   });
+
+  window._pokerAssistantIframe = new PokerAssistantIframe();
 })();
